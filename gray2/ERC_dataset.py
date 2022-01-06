@@ -1,0 +1,292 @@
+from torch.utils.data import Dataset, DataLoader
+from torch.nn.utils.rnn import pack_sequence
+import random
+
+import numpy as np
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * (np.linalg.norm(b)))
+    
+class MELD_loader(Dataset):
+    def __init__(self, txt_file, dataclass, gray, word_emb):
+        self.dialogs = []
+        self.gray_type = gray
+        
+        f = open(txt_file, 'r')
+        dataset = f.readlines()
+        f.close()
+        
+        temp_speakerList = []
+        context = []
+        context_speaker = []
+        self.speakerNum = []
+        # 'anger', 'disgust', 'fear', 'joy', 'neutral', 'sadness', 'surprise'
+        emodict = {'anger': "anger", 'disgust': "disgust", 'fear': "fear", 'joy': "joy", 'neutral': "neutral", 'sadness': "sad", 'surprise': 'surprise'}
+        self.sentidict = {'positive': ["joy"], 'negative': ["anger", "disgust", "fear", "sad"], 'neutral': ["neutral", "surprise"]}        
+        self.sentiSet = set()
+        for i, data in enumerate(dataset):
+            if i < 2:
+                continue
+            if data == '\n' and len(self.dialogs) > 0:
+                self.speakerNum.append(len(temp_speakerList))
+                temp_speakerList = []
+                context = []
+                context_speaker = []
+                continue
+            speaker, utt, emo, senti = data.strip().split('\t')
+            context.append(utt)
+            if speaker not in temp_speakerList:
+                temp_speakerList.append(speaker)
+            speakerCLS = temp_speakerList.index(speaker)
+            context_speaker.append(speakerCLS)
+            
+            self.dialogs.append([context_speaker[:], context[:], emodict[emo], senti])
+            self.sentiSet.add(senti)
+        
+        self.emoList = list(emodict.values())
+        self.sentiList = sorted(self.sentiSet)
+        if dataclass == 'emotion':
+            self.labelList = self.emoList
+        else:
+            self.labelList = self.sentiList        
+        self.speakerNum.append(len(temp_speakerList))
+        
+        self.cos_dict = {}
+        for token1 in self.labelList:
+            emb1 = word_emb[token1]
+
+            for token2 in self.labelList:
+                emb2 = word_emb[token2]
+                score = cosine_similarity(emb1, emb2)
+                self.cos_dict[token1+token2] = score             
+        
+    def __len__(self):
+        return len(self.dialogs)
+
+    def __getitem__(self, idx):
+        return self.dialogs[idx], self.labelList, self.gray_type, self.sentidict, self.cos_dict
+    
+    
+class Emory_loader(Dataset):
+    def __init__(self, txt_file, dataclass, gray, word_emb):
+        self.dialogs = []
+        self.gray_type = gray
+        
+        f = open(txt_file, 'r')
+        dataset = f.readlines()
+        f.close()
+        """sentiment"""
+        # 'Joyful', 'Mad', 'Neutral', 'Peaceful', 'Powerful', 'Sad', 'Scared'
+        pos = ['Joyful', 'Peaceful', 'Powerful']
+        neg = ['Mad', 'Sad', 'Scared']
+        neu = ['Neutral']
+        emodict = {'Joyful': "joy", 'Mad': "mad", 'Peaceful': "peaceful", 'Powerful': "powerful", 'Neutral': "neutral", 'Sad': "sad", 'Scared': 'scared'}        
+        self.sentidict = {}
+        self.sentidict['positive'] = [emodict[x] for x in pos]
+        self.sentidict['negative'] = [emodict[x] for x in neg]
+        self.sentidict['neutral'] = [emodict[x] for x in neu]
+        
+        temp_speakerList = []
+        context = []
+        context_speaker = []        
+        self.speakerNum = []
+        self.sentiSet = set()
+        for i, data in enumerate(dataset):
+            if data == '\n' and len(self.dialogs) > 0:
+                self.speakerNum.append(len(temp_speakerList))
+                temp_speakerList = []
+                context = []
+                context_speaker = []
+                continue
+            speaker, utt, emo = data.strip().split('\t')
+            context.append(utt)
+            
+            if emo in pos:
+                senti = "positive"
+            elif emo in neg:
+                senti = "negative"
+            elif emo in neu:
+                senti = "neutral"
+            else:
+                print('ERROR emotion&sentiment')
+                
+            if speaker not in temp_speakerList:
+                temp_speakerList.append(speaker)
+            speakerCLS = temp_speakerList.index(speaker)
+            context_speaker.append(speakerCLS)
+            
+            self.dialogs.append([context_speaker[:], context[:], emodict[emo], senti])
+            self.sentiSet.add(senti)
+            
+        self.emoList = list(emodict.values())
+        self.sentiList = sorted(self.sentiSet)
+        if dataclass == 'emotion':
+            self.labelList = self.emoList
+        else:
+            self.labelList = self.sentiList        
+        self.speakerNum.append(len(temp_speakerList))
+        
+        self.cos_dict = {}
+        for token1 in self.labelList:
+            emb1 = word_emb[token1]
+
+            for token2 in self.labelList:
+                emb2 = word_emb[token2]
+                score = cosine_similarity(emb1, emb2)
+                self.cos_dict[token1+token2] = score        
+        
+    def __len__(self):
+        return len(self.dialogs)
+
+    def __getitem__(self, idx):
+        return self.dialogs[idx], self.labelList, self.gray_type, self.sentidict, self.cos_dict
+    
+    
+class IEMOCAP_loader(Dataset):
+    def __init__(self, txt_file, dataclass, gray, word_emb):
+        self.dialogs = []
+        self.gray_type = gray
+        
+        f = open(txt_file, 'r')
+        dataset = f.readlines()
+        f.close()
+        
+        temp_speakerList = []
+        context = []
+        context_speaker = []
+        self.speakerNum = []
+        pos = ['ang', 'exc', 'hap']
+        neg = ['fru', 'sad']
+        neu = ['neu']
+        emodict = {'ang': "angry", 'exc': "excited", 'fru': "frustrated", 'hap': "happy", 'neu': "neutral", 'sad': "sad"}
+        self.sentidict = {}
+        self.sentidict['positive'] = [emodict[x] for x in pos]
+        self.sentidict['negative'] = [emodict[x] for x in neg]
+        self.sentidict['neutral'] = [emodict[x] for x in neu]
+        # use: 'hap', 'sad', 'neu', 'ang', 'exc', 'fru'
+        # discard: disgust, fear, other, surprise, xxx        
+        self.sentiSet = set()
+        for i, data in enumerate(dataset):
+            if data == '\n' and len(self.dialogs) > 0:
+                self.speakerNum.append(len(temp_speakerList))
+                temp_speakerList = []
+                context = []
+                context_speaker = []
+                continue
+            speaker = data.strip().split('\t')[0]
+            utt = ' '.join(data.strip().split('\t')[1:-1])
+            emo = data.strip().split('\t')[-1]
+            context.append(utt)
+            
+            if emo in pos:
+                senti = "positive"
+            elif emo in neg:
+                senti = "negative"
+            elif emo in neu:
+                senti = "neutral"
+            else:
+                print('ERROR emotion&sentiment')                        
+            
+            if speaker not in temp_speakerList:
+                temp_speakerList.append(speaker)
+            speakerCLS = temp_speakerList.index(speaker)
+            context_speaker.append(speakerCLS)
+            
+            self.dialogs.append([context_speaker[:], context[:], emodict[emo], senti])
+        
+        self.emoList = list(emodict.values())
+        self.sentiList = sorted(self.sentiSet)
+        if dataclass == 'emotion':
+            self.labelList = self.emoList
+        else:
+            self.labelList = self.sentiList        
+        self.speakerNum.append(len(temp_speakerList))
+        
+        self.cos_dict = {}
+        for token1 in self.labelList:
+            emb1 = word_emb[token1]
+
+            for token2 in self.labelList:
+                emb2 = word_emb[token2]
+                score = cosine_similarity(emb1, emb2)
+                self.cos_dict[token1+token2] = score             
+        
+    def __len__(self):
+        return len(self.dialogs)
+
+    def __getitem__(self, idx):
+        return self.dialogs[idx], self.labelList, self.gray_type, self.sentidict, self.cos_dict
+    
+class DD_loader(Dataset):
+    def __init__(self, txt_file, dataclass, gray, word_emb):
+        self.dialogs = []
+        self.gray_type = gray
+        
+        f = open(txt_file, 'r')
+        dataset = f.readlines()
+        f.close()
+        
+        temp_speakerList = []
+        context = []
+        context_speaker = []
+        self.speakerNum = []
+        self.sentiSet = set()
+        # {'anger', 'disgust', 'fear', 'happiness', 'neutral', 'sadness', 'surprise'}
+        pos = ['happiness']
+        neg = ['anger', 'disgust', 'fear', 'sadness']
+        neu = ['neutral', 'surprise']
+        emodict = {'anger': "anger", 'disgust': "disgust", 'fear': "fear", 'happiness': "happy", 'neutral': "neutral", 'sadness': "sad", 'surprise': "surprise"}
+        self.sentidict = {}
+        self.sentidict['positive'] = [emodict[x] for x in pos]
+        self.sentidict['negative'] = [emodict[x] for x in neg]
+        self.sentidict['neutral'] = [emodict[x] for x in neu]
+        for i, data in enumerate(dataset):
+            if data == '\n' and len(self.dialogs) > 0:
+                self.speakerNum.append(len(temp_speakerList))
+                temp_speakerList = []
+                context = []
+                context_speaker = []
+                continue
+            speaker = data.strip().split('\t')[0]
+            utt = ' '.join(data.strip().split('\t')[1:-1])
+            emo = data.strip().split('\t')[-1]
+            
+            if emo in pos:
+                senti = "positive"
+            elif emo in neg:
+                senti = "negative"
+            elif emo in neu:
+                senti = "neutral"
+            else:
+                print('ERROR emotion&sentiment')                
+            
+            context.append(utt)
+            if speaker not in temp_speakerList:
+                temp_speakerList.append(speaker)
+            speakerCLS = temp_speakerList.index(speaker)
+            context_speaker.append(speakerCLS)
+            
+            self.dialogs.append([context_speaker[:], context[:], emodict[emo], senti])
+        
+        self.emoList = list(emodict.values())
+        self.sentiList = sorted(self.sentiSet)
+        if dataclass == 'emotion':
+            self.labelList = self.emoList
+        else:
+            self.labelList = self.sentiList        
+        self.speakerNum.append(len(temp_speakerList))
+        
+        self.cos_dict = {}
+        for token1 in self.labelList:
+            emb1 = word_emb[token1]
+
+            for token2 in self.labelList:
+                emb2 = word_emb[token2]
+                score = cosine_similarity(emb1, emb2)
+                self.cos_dict[token1+token2] = score        
+        
+    def __len__(self):
+        return len(self.dialogs)
+
+    def __getitem__(self, idx):
+        return self.dialogs[idx], self.labelList, self.gray_type, self.sentidict, self.cos_dict
