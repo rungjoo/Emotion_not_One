@@ -138,7 +138,7 @@ def main():
     clsNum = len(train_dataset.labelList)
     
     """Teacher model Loading"""
-    teacher_path = os.path.join('../../04_ERC_gray', dataset+'_models', model_type, dataclass, teacher_gray_type, str(args.teacher_weight1)+'_'+str(args.teacher_weight2))
+    teacher_path = os.path.join('../gray', dataset+'_models', model_type, dataclass, teacher_gray_type, str(args.teacher_weight1)+'_'+str(args.teacher_weight2))
     print("###Teacher Path### ", teacher_path)
     teacher_model = ERC_model(model_type, clsNum, last)
     modelfile = os.path.join(teacher_path, 'model.bin')

@@ -142,9 +142,9 @@ def main():
     
     """Teacher model Loading"""
     if gray_type == 'teacher_future':
-        teacher_path = os.path.join('../01_ERC/03_ERC_origin_future', dataset+'_models', model_type, dataclass)
+        teacher_path = os.path.join('../self_future', dataset+'_models', model_type, dataclass)
     else:
-        teacher_path = os.path.join('../01_ERC/03_ERC_origin', dataset+'_models', model_type, dataclass)
+        teacher_path = os.path.join('../self', dataset+'_models', model_type, dataclass)
     print("###Teacher Path### ", teacher_path)
     teacher_model = ERC_model(model_type, clsNum, last)
     modelfile = os.path.join(teacher_path, 'model.bin')
