@@ -17,14 +17,21 @@ class ERC_model_future(nn.Module):
         self.last = last
         
         """Model Setting"""
+        condition_token = ['<s1>', '<s2>', '<s3>'] # 최대 3명
+        special_tokens = {'additional_special_tokens': condition_token}
+        
         # model_path = '/data/project/rw/rung/model/'+model_type
         model_path = model_type
         if model_type == 'roberta-large':
             self.model = RobertaModel.from_pretrained(model_path)
+            tokenizer = RobertaTokenizer.from_pretrained(model_path)
         elif model_type == 'bert-large-uncased':
             self.model = BertModel.from_pretrained(model_path)
+            tokenizer = BertTokenizer.from_pretrained(model_path)
         else:
             print('error')
+        tokenizer.add_special_tokens(special_tokens)
+        self.model.resize_token_embeddings(len(tokenizer))
         self.hiddenDim = self.model.config.hidden_size
             
         """score"""
