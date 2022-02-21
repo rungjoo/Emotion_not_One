@@ -18,9 +18,6 @@ class ERC_model(nn.Module):
         self.last = last
         
         """Model Setting"""
-        condition_token = ['<s1>', '<s2>', '<s3>'] # 최대 3명
-        special_tokens = {'additional_special_tokens': condition_token}
-        
         # model_path = '/data/project/rw/rung/model/'+model_type
         model_path = model_type
         if model_type == 'roberta-large':
@@ -33,9 +30,12 @@ class ERC_model(nn.Module):
             self.model = GPT2Model.from_pretrained(model_path)
             tokenizer = GPT2Tokenizer.from_pretrained(model_path)
             tokenizer.add_special_tokens({'cls_token': '[CLS]', 'pad_token': '[PAD]'})
+            self.model.resize_token_embeddings(len(tokenizer))
             
-        tokenizer.add_special_tokens(special_tokens)
-        self.model.resize_token_embeddings(len(tokenizer))
+#         condition_token = ['<s1>', '<s2>', '<s3>'] # 최대 3명
+#         special_tokens = {'additional_special_tokens': condition_token}
+#         tokenizer.add_special_tokens(special_tokens)
+#         self.model.resize_token_embeddings(len(tokenizer))
         self.hiddenDim = self.model.config.hidden_size
             
         """score"""
