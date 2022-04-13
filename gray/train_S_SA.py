@@ -141,7 +141,7 @@ def main():
     model.train() 
     
     """Teacher model Loading"""
-    teacher_path = os.path.join('../self', dataset+'_models', model_type, dataclass)
+    teacher_path = os.path.join('../self_teacher', dataset+'_models', model_type, dataclass)
     print("###Teacher Path### ", teacher_path)
     teacher_model = ERC_model(model_type, clsNum, last)
     modelfile = os.path.join(teacher_path, 'model.bin')
