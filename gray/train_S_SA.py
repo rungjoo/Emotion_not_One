@@ -16,8 +16,8 @@ import pdb
 import argparse, logging
 from sklearn.metrics import precision_recall_fscore_support
 
-from utils_teacher import encode_right_truncated, padding
-from utils_teacher import make_batch_roberta, make_batch_bert, make_batch_gpt
+from utils_S_SA import encode_right_truncated, padding
+from utils_S_SA import make_batch_roberta, make_batch_bert, make_batch_gpt
 
 def CELoss(pred_outs, labels):
     """
@@ -73,7 +73,6 @@ def main():
     sample = args.sample
     model_type = args.pretrained
     gray_type = args.gray
-    teacher_gray_type = args.teacher_gray
     w1 = args.weight1
     w2 = args.weight2
     
@@ -83,16 +82,16 @@ def main():
             dataType = 'dyadic'
         else:
             dataType = 'multi'
-        data_path = '../dataset/MELD/'+dataType+'/'
+        data_path = './dataset/MELD/'+dataType+'/'
         DATA_loader = MELD_loader
     elif dataset == 'EMORY':
-        data_path = '../dataset/EMORY/'
+        data_path = './dataset/EMORY/'
         DATA_loader = Emory_loader
     elif dataset == 'iemocap':
-        data_path = '../dataset/iemocap/'
+        data_path = './dataset/iemocap/'
         DATA_loader = IEMOCAP_loader
     elif dataset == 'dailydialog':
-        data_path = '../dataset/dailydialog/'
+        data_path = './dataset/dailydialog/'
         DATA_loader = DD_loader
         
     if model_type == 'roberta-large':
@@ -129,27 +128,26 @@ def main():
     logger.addHandler(fileHandler)    
     logger.setLevel(level=logging.DEBUG)      
     
-    """model setting"""
+    """Model Loading"""
     if 'gpt2' in model_type:
         last = True
     else:
-        last = False    
-    print('DataClass: ', dataclass, '!!!') # emotion
+        last = False
+        
+    print('DataClass: ', dataclass, '!!!') # emotion    
     clsNum = len(train_dataset.labelList)
+    model = ERC_model(model_type, clsNum, last)
+    model = model.cuda()    
+    model.train() 
     
     """Teacher model Loading"""
-    teacher_path = os.path.join('../gray', dataset+'_models', model_type, dataclass, teacher_gray_type, str(args.teacher_weight1)+'_'+str(args.teacher_weight2))
+    teacher_path = os.path.join('../self', dataset+'_models', model_type, dataclass)
     print("###Teacher Path### ", teacher_path)
     teacher_model = ERC_model(model_type, clsNum, last)
     modelfile = os.path.join(teacher_path, 'model.bin')
     teacher_model.load_state_dict(torch.load(modelfile))
     teacher_model = teacher_model.cuda()    
-    teacher_model.eval()         
-    
-    """Model Loading"""
-    model = ERC_model(model_type, clsNum, last)
-    model = model.cuda()    
-    model.train() 
+    teacher_model.eval()     
     
     """Training Setting"""        
     training_epochs = args.epoch
@@ -216,28 +214,7 @@ def main():
                 test_pre_micro, test_rec_micro, test_fbeta_micro, _ = precision_recall_fscore_support(test_label_list, test_pred_list, labels=[0,1,2,3,5,6], average='micro') # neutral x                
                 
                 best_epoch = epoch
-                _SaveModel(model, save_path)
-                
-        elif dataset == 'EDOS': # EDOS
-            dev_prek, dev_pred_list, dev_label_list = _CalACC(model, dev_dataloader)
-            dev_pre, dev_rec, dev_f_macro, _ = precision_recall_fscore_support(dev_label_list, dev_pred_list, average='macro')
-            dev_pre, dev_rec, dev_f_weighted, _ = precision_recall_fscore_support(dev_label_list, dev_pred_list, average='weighted')
-
-            """Best Score & Model Save"""
-            if dev_f_macro > best_dev_fscore:
-                best_dev_fscore = dev_f_macro
-                
-                test_prek, test_pred_list, test_label_list = _CalACC(model, test_dataloader)
-                test_pre, test_rec, test_f_macro, _ = precision_recall_fscore_support(test_label_list, test_pred_list, average='macro')
-                test_pre, test_rec, test_f_weighted, _ = precision_recall_fscore_support(test_label_list, test_pred_list, average='weighted')
-                
-                best_epoch = epoch
-                _SaveModel(model, save_path)
-            if test_f_macro > best_test_fscore:
-                best_test_fscore = test_f_macro
-                best_test_prek = test_prek
-                best_epoch = epoch
-                
+                _SaveModel(model, save_path)                
         else: # weight
             dev_prek, dev_pred_list, dev_label_list = _CalACC(model, dev_dataloader)
             dev_pre, dev_rec, dev_fbeta, _ = precision_recall_fscore_support(dev_label_list, dev_pred_list, average='weighted')
@@ -256,17 +233,12 @@ def main():
         if dataset == 'dailydialog': # micro & macro
             logger.info('Devleopment ## precision: {}, macro-fscore: {}, micro-fscore: {}'.format(dev_prek, dev_fbeta_macro, dev_fbeta_micro))
             logger.info('')
-        elif dataset == 'EDOS': # EDOS
-            logger.info('Devleopment ## precision: {}, macro-fscore: {}, weighted-fscore: {}'.format(dev_prek, dev_f_macro, dev_f_weighted))
-            logger.info('')            
         else:
             logger.info('Devleopment ## precision: {}, precision: {}, recall: {}, fscore: {}'.format(dev_prek, dev_pre, dev_rec, dev_fbeta))
             logger.info('')
         
     if dataset == 'dailydialog': # micro & macro
-        logger.info('Final Fscore ## test-precision: {}, test-macro: {}, test-micro: {}, test_epoch: {}'.format(test_prek, test_fbeta_macro, test_fbeta_micro, best_epoch)) 
-    elif dataset == 'EDOS': # EDOS
-        logger.info('Final Fscore ## test-precision: {}, test-macro: {}, test-weighted: {}, test_epoch: {}'.format(test_prek, test_f_macro, test_f_weighted, best_epoch)) 
+        logger.info('Final Fscore ## test-precision: {}, test-macro: {}, test-micro: {}, test_epoch: {}'.format(test_prek, test_fbeta_macro, test_fbeta_micro, best_epoch))
     else:
         logger.info('Final Fscore ## test-precision: {}, test-fscore: {}, test_epoch: {}'.format(test_prek, test_fbeta, best_epoch))        
     
@@ -328,14 +300,9 @@ if __name__ == '__main__':
     parser.add_argument( "--norm", type=int, help = "max_grad_norm", default = 10)
     parser.add_argument( "--lr", type=float, help = "learning rate", default = 1e-6) # 1e-5
     parser.add_argument( "--sample", type=float, help = "sampling trainign dataset", default = 1.0) # 
-    
     parser.add_argument( "--weight1", type=float, help = "weighted loss for original", default = 1.0) # 
-    parser.add_argument( "--weight2", type=float, help = "weighted loss for teacher", default = 1.0) #     
+    parser.add_argument( "--weight2", type=float, help = "weighted loss for grayscale", default = 1.0) # 
     parser.add_argument( "--gray", help = 'teacher or teacher_post', default = 'teacher')
-        
-    parser.add_argument( "--teacher_gray", help = 'teacher or teacher_post or teacher_future', default = 'teacher')
-    parser.add_argument( "--teacher_weight1", type=float, help = "weighted loss for original", default = 1.0) # 
-    parser.add_argument( "--teacher_weight2", type=float, help = "weighted loss for teacher", default = 1.0) #  
 
     parser.add_argument( "--dataset", help = 'MELD or EMORY or iemocap or dailydialog', default = 'MELD')
     
