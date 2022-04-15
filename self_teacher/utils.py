@@ -4,14 +4,14 @@ from transformers import RobertaTokenizer, RobertaModel
 from transformers import BertTokenizer, BertModel
 from transformers import GPT2Tokenizer, GPT2Model
 
-# roberta_tokenizer = RobertaTokenizer.from_pretrained('/data/project/rw/rung/model/roberta-large/')
-# bert_tokenizer = BertTokenizer.from_pretrained('/data/project/rw/rung/model/bert-large-uncased/')
-# gpt_tokenizer = GPT2Tokenizer.from_pretrained('/data/project/rw/rung/model/gpt2-large/')
+roberta_tokenizer = RobertaTokenizer.from_pretrained('/data/project/rw/rung/model/roberta-large/')
+bert_tokenizer = BertTokenizer.from_pretrained('/data/project/rw/rung/model/bert-large-uncased/')
+gpt_tokenizer = GPT2Tokenizer.from_pretrained('/data/project/rw/rung/model/gpt2-large/')
 
-roberta_tokenizer = RobertaTokenizer.from_pretrained('roberta-large')
-bert_tokenizer = BertTokenizer.from_pretrained('bert-large-uncased/')
-gpt_tokenizer = GPT2Tokenizer.from_pretrained('gpt2-large')
-gpt_tokenizer.add_special_tokens({'cls_token': '[CLS]', 'pad_token': '[PAD]'})
+# roberta_tokenizer = RobertaTokenizer.from_pretrained('roberta-large')
+# bert_tokenizer = BertTokenizer.from_pretrained('bert-large-uncased/')
+# gpt_tokenizer = GPT2Tokenizer.from_pretrained('gpt2-large')
+# gpt_tokenizer.add_special_tokens({'cls_token': '[CLS]', 'pad_token': '[PAD]'})
 
 # condition_token = ['<s1>', '<s2>', '<s3>'] # 최대 3명
 # special_tokens = {'additional_special_tokens': condition_token}

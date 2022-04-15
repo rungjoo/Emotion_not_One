@@ -39,7 +39,7 @@ def pdloss(batch_pred_distribution, batch_label_distribution):
     for log_pred_distribution, label_distribution in zip(batch_log_pred_distribution, batch_label_distribution):
         for log_pred_prob, label_prob in zip(log_pred_distribution, label_distribution):
             loss_val -= label_prob*log_pred_prob
-    return loss_val
+    return loss_val/len(batch_pred_distribution)
 
 def mod_distribution(batch_labels, pred_teacher_distribution):
     mod_teacher_distribution = []
