@@ -1,5 +1,5 @@
 # The Emotion is Not One-hot Encoding: Learning with Grayscale Label for Emotion Recognition in Conversation (INTERSPEECH 2022)
-![model](./image/model.png){: width="100" height="100"}
+![model](./image/model.png) { width: 20px; }
 
 - The overall flow of our model. 
 - This repository provides training/test codes for RoBERTa. Please use each open source for extensions to the comparison system.
