@@ -32,7 +32,7 @@ cd self_future_teacher
 python3 train.py {--argument}
 ```
 
-**Step2: Training student model**
+**Step2: Training student model (final model)**
 ```bash
 cd gray
 python3 train_{method}.py {--argument}
@@ -53,5 +53,10 @@ python3 train_{method}.py {--argument}
 ## Citation
 
 ```bibtex
-not yet
+@article{lee2022emotion,
+  title={The Emotion is Not One-hot Encoding: Learning with Grayscale Label for Emotion Recognition in Conversation},
+  author={Lee, Joosung},
+  journal={arXiv preprint arXiv:2206.07359},
+  year={2022}
+}
 ```
