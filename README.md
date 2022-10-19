@@ -53,10 +53,13 @@ python3 train_{method}.py {--argument}
 ## Citation
 
 ```bibtex
-@article{lee2022emotion,
-  title={The Emotion is Not One-hot Encoding: Learning with Grayscale Label for Emotion Recognition in Conversation},
-  author={Lee, Joosung},
-  journal={arXiv preprint arXiv:2206.07359},
-  year={2022}
+@inproceedings{lee22e_interspeech,
+  author={Joosung Lee},
+  title={{The Emotion is Not One-hot Encoding: Learning with Grayscale Label for Emotion Recognition in Conversation}},
+  year=2022,
+  booktitle={Proc. Interspeech 2022},
+  pages={141--145},
+  doi={10.21437/Interspeech.2022-551}
+}
 }
 ```
