@@ -61,5 +61,4 @@ python3 train_{method}.py {--argument}
   pages={141--145},
   doi={10.21437/Interspeech.2022-551}
 }
-}
 ```
